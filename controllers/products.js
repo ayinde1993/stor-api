@@ -1,17 +1,26 @@
-const product = require('../models/product')
+// const product = require('../models/product')
 const Product = require('../models/product')
 const { search } = require('../routes/products')
 
-const getAllProductsStatic = async (req, res) =>{
-   
-    // const products = await Product.find({}).sort('-name price')
-    const products = await Product.find({price:{$gt:30}})
-    .sort('price')
-    .select('name price')
-    .limit(10)
-     res.status(200).json({products, nbHits: products.length})
-  //res.status(200).json({msg: 'products testing route'})
+const createProduct = async (req, res) => {
+    try {
+        const product = await Product.create(req.body)
+        res.status(201).json({msg: `product create with succes `})
+    } catch (error) {
+        res.status(500).json({msg: error})
+    }
 }
+
+// const getAllProductsStatic = async (req, res) =>{
+   
+//     // const products = await Product.find({}).sort('-name price')
+//     const products = await Product.find({price:{$gt:30}})
+//     .sort('price')
+//     .select('name price')
+//     .limit(10)
+//      res.status(200).json({products, nbHits: products.length})
+//   //res.status(200).json({msg: 'products testing route'})
+// }
 
 const getAllProducts = async (req, res) =>{
 
@@ -35,9 +44,9 @@ const getAllProducts = async (req, res) =>{
             '<':'$lt',
             '<=':'$lte',
         }
-        const regEX = /\b(<|>|>=|=|<|<=|)\b/g
+        const regEx = /\b(<|>|>=|=|<|<=|)\b/g
         let filters = numericFilters.replace(
-            regEX,
+            regEx,
             (match) => `-${operatorMap[match]}-`
         )
         const options = ['price', 'rating']
@@ -49,7 +58,7 @@ const getAllProducts = async (req, res) =>{
         })
     }
 
-    let result =  product.find(queryObject)
+    let result =  Product.find(queryObject)
     if(sort) {
         const sortList  = sort.split(',').join()
       
@@ -65,19 +74,55 @@ const getAllProducts = async (req, res) =>{
     }
     
 
-    const page = Number(req.query.page) || 1
-    const limit = Number(req.query.limit) || 10
-    const skip = (page-1) * limit
+    // const page = Number(req.query.page) || 1
+    // const limit = Number(req.query.limit) || 10
+    // const skip = (page-1) * limit
 
-    //result = result.skip(skip).limit(limit)
+    // result = result.skip(skip).limit(limit)
     const products = await result
     // const products = await product.find(queryObject)
 
     res.status(200).json({products, nbHits: products.length})
 
   }
+  
+  const updateProduct = async (req, res) =>{
+    try {
+        const {id: ProductID} = req.params
+
+        const product = await Product.findOneAndUpdate({_id: ProductID}, req.body)
+
+        if (!product) {
+            return res.status(404).json({msg: `No product with id: ${ProductID}`})
+        }
+        res.status(200).json({msg: ` Product update  with Success ${product}`})
+    } catch (error) {
+        res.status(500).json({msg: error})
+        
+    }
+  }
+
+
+  const deleteProduct = async (req, res) =>{
+    try {
+        const {id: ProductID} = req.params;
+        const product = await Product.findOneAndDelete({_id:ProductID})
+        if (!product) {
+            return res.status(404).json({msg: `No product with id: ${ProductID}`})
+        }
+
+        res.status(200).json({msg: `Product delete with succes`})
+        
+    } catch (error) {
+        res.status(500).json({msg: error})
+    }
+  }
 
   module.exports = {
+    createProduct,
     getAllProducts,
-    getAllProductsStatic,
+    updateProduct,
+    deleteProduct,
+   
+    // getAllProductsStatic,
   }
